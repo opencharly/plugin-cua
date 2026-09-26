@@ -106,16 +106,6 @@ func applyDeviceDefaults(in *params.CuaInput, dev *params.CuaDeviceInput) {
 	}
 }
 
-// kindCapability advertises the plugin's kind:cua capability — the entity's
-// self-contained CUE schema, served over the same Describe channel as the verb.
-func kindCapability() sdk.ProvidedCapability {
-	return sdk.ProvidedCapability{
-		Class:    "kind",
-		Word:     kindWord,
-		InputDef: "#CuaDeviceInput",
-	}
-}
-
 // deviceCanonicalJSON is the OpLoad body decode: the host validates the authored entity
 // against #CuaDeviceInput, then this re-marshals it canonically.
 func deviceCanonicalJSON(paramsJSON []byte) (json.RawMessage, error) {

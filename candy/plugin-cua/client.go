@@ -16,7 +16,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/opencharly/plugin-cua/candy/plugin-cua/params"
@@ -110,10 +109,4 @@ func jsonArgs(m map[string]any) string {
 // shellSingleQuote wraps s in single quotes for safe shell interpolation.
 func shellSingleQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
-}
-
-// hostname is a small helper for evidence rows.
-func hostname() string {
-	h, _ := os.Hostname()
-	return h
 }

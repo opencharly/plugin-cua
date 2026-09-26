@@ -1,0 +1,51 @@
+# The Go gates for this plugin's own module.
+#
+# This repo ships a REAL Go module (the cua provider + its client, CUE schema, and
+# unit tests), so the rulebook's "tests that can fail" (R7) requires a gate that
+# actually RUNS them: gofmt, golangci-lint, go vet, and the unit tests. The candy
+# manifest gate (deploy.yml `charly box validate`) checks the manifest, not the Go
+# code, and the bed exercises verb DISPATCH, not the unit tests — so this workflow
+# is the only place the module's tests run.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: candy/plugin-cua/go.mod
+          cache-dependency-path: candy/plugin-cua/go.sum
+
+      - name: gofmt
+        working-directory: candy/plugin-cua
+        run: test -z "$(gofmt -l .)"
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.13.2
+          working-directory: candy/plugin-cua
+
+      - name: go vet
+        working-directory: candy/plugin-cua
+        run: go vet ./...
+
+      - name: go test
+        working-directory: candy/plugin-cua
+        run: go test ./...
