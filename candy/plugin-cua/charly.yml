@@ -1,0 +1,67 @@
+version: 2026.261.1747
+plugin-cua:
+    candy:
+        version: 2026.261.1747
+        description: |-
+            OUT-OF-TREE charly plugin serving the `cua` computer-use verb AND the `kind: cua`
+            entity — a standalone Go module (go.mod + cmd/serve) that drives a LIVE desktop
+            through Cua Driver (trycua/cua): the background computer-use driver that speaks
+            MCP over stdio and a CLI (`cua-driver call <tool> '<json>'`). It is served
+            OUT-OF-PROCESS over go-plugin gRPC via the charly plugin SDK
+            (github.com/opencharly/sdk); charly's loader fetches this candy's repo,
+            go-builds the provider binary on the HOST, and connects it via LocalTransport,
+            so the Cua wire lives HERE, out of charly's core check surface.
+
+            The verb drives the driver WHERE IT LIVES (a desktop VM/pod) over the host's
+            DeployExecutor reverse channel — the plugin-record / plugin-wl / plugin-jetkvm
+            precedent — so it needs no podman/venue machinery of its own. Observation
+            (status/doctor/list-apps/list-windows/get-window-state/get-desktop-state/
+            screenshot) is read-only. Every MUTATING method (input, app/window control,
+            recording, the raw `call` escape hatch) requires `allow_control: true` — the
+            bed-safety gate: a live desktop is not a throwaway, and an unattended plan must
+            not type into it by accident. Cua Driver's own permission mode (standard /
+            bounded / unrestricted), declared on the `kind: cua` entity, remains the
+            authority the plugin passes through.
+
+            The motivating corpus is the Cua Omarchy Fleet image (Omarchy 4.0.2 + Hyprland
+            0.56.2 + Driver 0.26.1), pulled and booted locally by charly's `container_disk`
+            VM source; the check beds assert the driver contract on it.
+
+            The verb's entire authoring surface lives in this plugin's own #CuaInput
+            (schema/cua.cue), which the host splices onto the base and validates every
+            authored `cua:` step against; the plugin self-evaluates the shared
+            stdout/stderr/exit_status matchers and the artifact validators
+            (sdk.VerbVerdict / sdk.LandArtifact), so it owns the verdict exactly like every
+            other out-of-process verb.
+        plugin:
+            source: github.com/opencharly/plugin-cua/candy/plugin-cua
+            providers:
+                - verb:cua
+                - kind:cua
+            primary:
+                cua: method
+        plan:
+            - check: the plugin ships its self-contained CUE schema and provider entrypoint (the files the host reads over Describe and host-builds) — a deterministic probe that fails if either is missing
+              id: cua-module-present
+              file:
+                file: candy/plugin-cua/schema/cua.cue
+                exists: true
+              context:
+                - build
+            - check: "the verb and kind capabilities are declared together, so a cua step dispatches AND a kind cua entity is recognized at parse (a probe that fails if either declaration is dropped)"
+              id: cua-capabilities-declared
+              command:
+                # Anchored to the DECLARATION lines, NOT a bare substring: the check's own
+                # command text contains the substrings, so an unanchored grep would match
+                # itself and stay green even if the declaration were deleted.
+                command: 'grep -qE "^[[:space:]]+-[[:space:]]*verb:cua[[:space:]]*$" candy/plugin-cua/charly.yml && grep -qE "^[[:space:]]+-[[:space:]]*kind:cua[[:space:]]*$" candy/plugin-cua/charly.yml'
+                in_container: false
+              context:
+                - runtime
+            - check: the cua verb dispatches through the provider registry and reports its documented no-session skip — proving the out-of-process plugin was host-built, connected, and ran its verdict path (a step that FAILS if the verb is unregistered or the module will not build/serve)
+              id: cua-verb-dispatches
+              cua: status
+              stdout:
+                - contains: skip
+              context:
+                - runtime

@@ -1,0 +1,60 @@
+# Makes this plugin repo a PROJECT so its own candy is actually gated.
+#
+# Without a root charly.yml the repo is "project-less": charly scans NO candies at all,
+# so `charly box validate` at the repo root exits 0 on ANY manifest, including one with a
+# malformed `plugin.providers` entry. Declaring discover: is the whole fix.
+version: 2026.261.1747
+discover:
+    - path: candy
+      recursive: true
+
+# A disposable LOCAL bed proving the plugin's verb is registered and its verdict path
+# runs end to end through the real provider registry. `disposable: true` is the sole
+# authorization for autonomous teardown, and this bed touches nothing but the registry:
+# the verb reports the documented skip (no live desktop session in a bare local deploy).
+cua-verb-probe:
+    local:
+        from: cua-probe-host
+        host: local
+        disposable: true
+        plan:
+            - check: the cua verb dispatches through the provider registry and reports its documented skip (proving the out-of-process plugin connected and its verdict path ran)
+              id: cua-dispatch-probe
+              cua: status
+              stdout:
+                  - contains: skip
+              context:
+                - runtime
+cua-probe-host:
+    local:
+        description: minimal kind:local template for the cua verb-dispatch bed
+        candy: []
+
+# A `kind: cua` entity, referenced by a step, proving parse-time recognition and the
+# plugin-side OpLoad. Read-only (`status`) so it actuates nothing.
+cua-entity:
+    cua:
+        description: >-
+            Minimal kind:cua entity for the entity-resolution bed: the driver path and
+            a session env, referenced by a step with `device:`.
+        driver: /usr/local/bin/cua-driver
+        permission_mode: standard
+cua-entity-probe:
+    local:
+        from: cua-entity-host
+        host: local
+        disposable: true
+        plan:
+            - check: "a step naming a `kind: cua` entity is recognized and the plugin's verdict path runs (device reference resolves over the reverse channel; no live session ⇒ documented skip)"
+              id: cua-entity-resolves
+              cua:
+                  method: status
+                  device: cua-entity
+              stdout:
+                  - contains: skip
+              context:
+                - runtime
+cua-entity-host:
+    local:
+        description: minimal kind:local template for the entity-resolution bed
+        candy: []
