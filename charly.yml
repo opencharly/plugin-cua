@@ -3,7 +3,6 @@
 # Without a root charly.yml the repo is "project-less": charly scans NO candies at all,
 # so `charly box validate` at the repo root exits 0 on ANY manifest, including one with a
 # malformed `plugin.providers` entry. Declaring discover: is the whole fix.
-version: 2026.261.1747
 discover:
     - path: candy
       recursive: true
