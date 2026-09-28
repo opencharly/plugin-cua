@@ -1,7 +1,5 @@
-version: 2026.261.1747
 plugin-cua:
     candy:
-        version: 2026.261.1747
         description: |-
             OUT-OF-TREE charly plugin serving the `cua` computer-use verb AND the `kind: cua`
             entity — a standalone Go module (go.mod + cmd/serve) that drives a LIVE desktop
