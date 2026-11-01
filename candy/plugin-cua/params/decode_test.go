@@ -1,18 +1,17 @@
 package params
 
-// decode_test.go — the ONE runtime path these generated structs participate in, pinned against
-// the SOURCE OF TRUTH.
+// decode_test.go — pins this generated projection against its SOURCE OF TRUTH, in both directions.
 //
 // charly hands a plugin its parameters as JSON (`spec.Op`'s params_json) and the plugin decodes
 // that JSON into this projection; the sdk's kit.DecodeInput re-marshals to JSON before it
 // unmarshals too. No YAML decoder ever sees these types — which is why the projection's `yaml:`
-// tags are inert, and why this test pins the JSON side rather than asserting the claim in prose.
+// tags are inert, and why this test pins the JSON side rather than asserting that claim in prose.
 //
-// The expected wire keys below are copied from `candy/plugin-cua/schema/*.cue` — the schema that
-// GENERATES this file. They are hardcoded on purpose: deriving them from the struct's own `json`
-// tags (the obvious thing to do) makes the test vacuous, because a tag that drifts takes its
-// derived expectation with it and the decode still lines up. Anchored to the schema instead, a
-// drifted, emptied or removed tag leaves the field unpopulated and fails here.
+// The expected keys below are copied from the `#CuaInput` definition in
+// `candy/plugin-cua/schema/*.cue` — the schema that GENERATES this file. They are hardcoded on
+// purpose: deriving them from the struct's own `json` tags (the obvious thing) makes the test
+// vacuous, because a tag that drifts takes its derived expectation with it and the decode still
+// lines up.
 
 import (
 	"encoding/json"
@@ -22,51 +21,51 @@ import (
 	"testing"
 )
 
-// schemaKeys is the wire-key set declared by candy/plugin-cua/schema/*.cue.
-var schemaKeys = map[string]bool{
-	"allow_control":           true,
-	"amount":                  true,
-	"app":                     true,
-	"args":                    true,
-	"artifact":                true,
-	"artifact_contains_text":  true,
-	"artifact_dir":            true,
-	"artifact_min_bytes":      true,
-	"artifact_min_dimensions": true,
-	"artifact_not_uniform":    true,
-	"button":                  true,
-	"capability_manifest":     true,
-	"delivery":                true,
-	"description":             true,
-	"device":                  true,
-	"direction":               true,
-	"driver":                  true,
-	"element_index":           true,
-	"env":                     true,
-	"from_x":                  true,
-	"from_y":                  true,
-	"height":                  true,
-	"host":                    true,
-	"key":                     true,
-	"keys":                    true,
-	"method":                  true,
-	"permission_mode":         true,
-	"pid":                     true,
-	"text":                    true,
-	"tool":                    true,
-	"value":                   true,
-	"width":                   true,
-	"window_id":               true,
-	"x":                       true,
-	"y":                       true,
+// schemaKeys is the field set of #CuaInput, taken from candy/plugin-cua/schema.
+var schemaKeys = []string{
+	"allow_control",
+	"amount",
+	"app",
+	"args",
+	"artifact",
+	"artifact_contains_text",
+	"artifact_dir",
+	"artifact_min_bytes",
+	"artifact_min_dimensions",
+	"artifact_not_uniform",
+	"button",
+	"delivery",
+	"device",
+	"direction",
+	"driver",
+	"element_index",
+	"env",
+	"from_x",
+	"from_y",
+	"height",
+	"host",
+	"key",
+	"keys",
+	"method",
+	"pid",
+	"text",
+	"tool",
+	"value",
+	"width",
+	"window_id",
+	"x",
+	"y",
 }
 
-func TestProjectionMatchesSchemaWireKeys(t *testing.T) {
+func TestProjectionMatchesItsSchema(t *testing.T) {
 	rt := reflect.TypeOf(CuaInput{})
 	ptr := reflect.New(rt)
-	wire := map[string]any{}
 
+	// Direction 1: STRUCT -> SCHEMA. Every exported field must carry a json key the schema
+	// declares; a drifted, emptied or removed tag is caught here.
+	wire := map[string]any{}
 	exported := 0
+	tagOf := map[string]string{} // json key -> Go field name
 	for i := 0; i < rt.NumField(); i++ {
 		f := rt.Field(i)
 		if f.PkgPath != "" {
@@ -75,11 +74,12 @@ func TestProjectionMatchesSchemaWireKeys(t *testing.T) {
 		exported++
 		key := strings.Split(f.Tag.Get("json"), ",")[0]
 		if key == "" || key == "-" {
-			t.Fatalf("field %s carries no usable json tag (%q) — the schema's key cannot reach it", f.Name, key)
+			t.Fatalf("field %s carries no usable json tag (%q) — no schema key can reach it", f.Name, key)
 		}
-		if !schemaKeys[key] {
-			t.Fatalf("field %s is tagged json:%q, which the schema candy/plugin-cua/schema does NOT declare — the projection has drifted from its source of truth", f.Name, key)
+		if !contains(schemaKeys, key) {
+			t.Fatalf("field %s is tagged json:%q, which #CuaInput in candy/plugin-cua/schema does NOT declare — the projection has drifted from its source of truth", f.Name, key)
 		}
+		tagOf[key] = f.Name
 		switch f.Type.Kind() {
 		case reflect.String:
 			wire[key] = "probe"
@@ -102,6 +102,15 @@ func TestProjectionMatchesSchemaWireKeys(t *testing.T) {
 		t.Fatal("the projection has no exported fields — the test would prove nothing")
 	}
 
+	// Direction 2: SCHEMA -> STRUCT. Every key the schema declares must be carried by a field;
+	// a key the projection dropped is caught here, and it is checked against schemaKeys directly
+	// rather than against anything derived from the tags.
+	for _, key := range schemaKeys {
+		if _, ok := tagOf[key]; !ok {
+			t.Fatalf("schema key %q is declared by #CuaInput but NO exported field carries it — the projection is missing part of its schema", key)
+		}
+	}
+
 	b, err := json.Marshal(wire)
 	if err != nil {
 		t.Fatalf("marshal the wire map: %v", err)
@@ -110,30 +119,27 @@ func TestProjectionMatchesSchemaWireKeys(t *testing.T) {
 	if err := json.Unmarshal(b, ptr.Interface()); err != nil {
 		t.Fatalf("decode the wire map into the projection: %v", err)
 	}
-
 	elem := ptr.Elem()
 	missing := []string{}
 	for key := range wire {
-		found := false
 		for i := 0; i < rt.NumField(); i++ {
 			f := rt.Field(i)
-			if f.PkgPath != "" {
-				continue
-			}
-			if strings.Split(f.Tag.Get("json"), ",")[0] != key {
-				continue
-			}
-			found = true
-			if elem.Field(i).IsZero() {
+			if f.PkgPath == "" && strings.Split(f.Tag.Get("json"), ",")[0] == key && elem.Field(i).IsZero() {
 				missing = append(missing, fmt.Sprintf("%s (field %s)", key, f.Name))
 			}
-		}
-		if !found {
-			missing = append(missing, key+" (no field carries it)")
 		}
 	}
 	if len(missing) > 0 {
 		t.Fatalf("%d wire key(s) were not delivered into the projection: %v", len(missing), missing)
 	}
-	t.Logf("verified %d exported field(s) against the schema's wire keys and decoded %d of them", exported, len(wire))
+	t.Logf("both directions hold: %d exported field(s), %d schema key(s), %d decoded", exported, len(schemaKeys), len(wire))
+}
+
+func contains(hay []string, needle string) bool {
+	for _, h := range hay {
+		if h == needle {
+			return true
+		}
+	}
+	return false
 }
