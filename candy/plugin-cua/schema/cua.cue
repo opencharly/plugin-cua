@@ -70,7 +70,7 @@
 	// delivery — the Cua delivery mode for an input action: background (default)
 	// or foreground. Foreground briefly fronts the window; it is the documented
 	// escalation when a background action is refused or unverifiable.
-	delivery?: "background" | "foreground"
+	delivery?: or(_deliveryWord)
 
 	// --- app / window -----------------------------------------------------
 	// app — the app name/bundle/launch-path for launch-app.
@@ -104,47 +104,67 @@
 	artifact_contains_text?:  string                       @go(ArtifactContainsText)
 }
 
+// --- vocabulary tables (S3) --------------------------------------------------
+// Every closed set of words is a table keyed by word, and its word list is derived
+// from that table and used as `or()` of the list (§10.1 S3, D-PAT-3). The table and
+// the enum it feeds therefore cannot disagree, and a new word is ONE row here.
+// `@vocab` names the owner (§3.1): this set is compiled into THIS plugin, so the
+// owner is the plugin's own word `cua`.
+_delivery: {background: {}, foreground: {}} @vocab(cua)
+_deliveryWord: [for w, _ in _delivery {w}]
+
+_permissionMode: {standard: {}, bounded: {}, unrestricted: {}} @vocab(cua)
+_permissionModeWord: [for w, _ in _permissionMode {w}]
+
+// --- the method catalog (S3) -------------------------------------------------
+// The vocabulary table: one row per method, grouped by intent so the read-only
+// surface is separable from the mutating one (the allow_control gate). The word
+// list below is derived from it.
+_method: {
+	// observation (read-only)
+	status: {}
+	doctor: {}
+	version: {}
+	"list-tools": {}
+	"list-apps": {}
+	"list-windows": {}
+	"get-window-state": {}
+	"get-desktop-state": {}
+	"get-screen-size": {}
+	screenshot: {}
+	// input (mutating)
+	click: {}
+	"double-click": {}
+	"right-click": {}
+	drag: {}
+	type: {}
+	"press-key": {}
+	hotkey: {}
+	scroll: {}
+	"move-cursor": {}
+	// app / window control (mutating)
+	"launch-app": {}
+	"kill-app": {}
+	"bring-to-front": {}
+	"set-window-frame": {}
+	"set-value": {}
+	// recording
+	"recording-start": {}
+	"recording-stop": {}
+	"recording-status": {}
+	"recording-render": {}
+	// raw escape hatch (mutating)
+	call: {}
+} @vocab(cua)
+_methodWord: [for w, _ in _method {w}]
+
 // #CuaMethod — the method catalog, grouped by intent so the read-only surface is
 // separable from the mutating one (the allow_control gate).
 //
-// NOTE: written as a bare trailing-pipe disjunction, NOT `(...)`-wrapped: CUE does
-// not terminate a parenthesised expression at a newline, so the grouped form requires
-// commas and breaks `cue exp gengotypes`.
-#CuaMethod: string &
-	// observation (read-only)
-	"status" |
-	"doctor" |
-	"version" |
-	"list-tools" |
-	"list-apps" |
-	"list-windows" |
-	"get-window-state" |
-	"get-desktop-state" |
-	"get-screen-size" |
-	"screenshot" |
-	// input (mutating)
-	"click" |
-	"double-click" |
-	"right-click" |
-	"drag" |
-	"type" |
-	"press-key" |
-	"hotkey" |
-	"scroll" |
-	"move-cursor" |
-	// app / window control (mutating)
-	"launch-app" |
-	"kill-app" |
-	"bring-to-front" |
-	"set-window-frame" |
-	"set-value" |
-	// recording
-	"recording-start" |
-	"recording-stop" |
-	"recording-status" |
-	"recording-render" |
-	// raw escape hatch (mutating)
-	"call"
+// S3: the words are rows of the `_method` table above and the enum below is derived
+// from its word list, so the catalog has ONE home — a new method is one row there,
+// and the table, the derived list and this enum cannot disagree.
+#CuaMethod: or(_methodWord)
 
 // #CuaDeviceInput — the authored `kind: cua` DEVICE entity body: the connection and
 // permission defaults a `cua:` step inherits when it names the entity with `device:`.
@@ -161,7 +181,7 @@
 	// promptless default; `bounded` admits only a reviewed manifest; `unrestricted`
 	// requires an explicit danger acknowledgement. The plugin passes the mode to the
 	// driver's launch, never overrides a running daemon's policy.
-	permission_mode?: "standard" | "bounded" | "unrestricted" @go(PermissionMode)
+	permission_mode?: or(_permissionModeWord) @go(PermissionMode)
 	// capability_manifest — the reviewed manifest path for `bounded` mode.
 	capability_manifest?: string @go(CapabilityManifest)
 	// env — extra session environment the driver needs inside the venue (the
