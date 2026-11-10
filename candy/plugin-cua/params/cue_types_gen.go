@@ -136,9 +136,9 @@ type CuaInput struct {
 // #CuaMethod — the method catalog, grouped by intent so the read-only surface is
 // separable from the mutating one (the allow_control gate).
 //
-// NOTE: written as a bare trailing-pipe disjunction, NOT `(...)`-wrapped: CUE does
-// not terminate a parenthesised expression at a newline, so the grouped form requires
-// commas and breaks `cue exp gengotypes`.
+// S3: the words are rows of the `_method` table above and the enum below is derived
+// from its word list, so the catalog has ONE home — a new method is one row there,
+// and the table, the derived list and this enum cannot disagree.
 type CuaMethod string
 
 // #CuaDeviceInput — the authored `kind: cua` DEVICE entity body: the connection and
