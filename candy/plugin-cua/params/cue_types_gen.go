@@ -26,111 +26,111 @@ package params
 type CuaInput struct {
 	// method — the cua method to dispatch (also the scalar-sugar primary:
 	// `cua: <method>`).
-	Method CuaMethod `json:"method"`
+	Method CuaMethod `yaml:"method,omitempty" json:"method"`
 
 	// --- connection -------------------------------------------------------
 	// host — the deployment/venue address hosting the Cua Driver. Omitted means
 	// "the deploy I am running against": the plugin drives it over the host
 	// reverse channel (the venue executor), which is the normal case.
-	Host string `json:"host,omitempty"`
+	Host string `yaml:"host,omitempty" json:"host,omitempty"`
 
 	// driver — the `cua-driver` binary path inside the venue (default
 	// /usr/local/bin/cua-driver).
-	Driver string `json:"driver,omitempty"`
+	Driver string `yaml:"driver,omitempty" json:"driver,omitempty"`
 
 	// device — the name of a `kind: cua` DEVICE entity whose connection/permission
 	// defaults this step inherits. Authored step fields WIN over the entity's.
-	Device string `json:"device,omitempty"`
+	Device string `yaml:"device,omitempty" json:"device,omitempty"`
 
 	// env — extra session environment the driver needs inside the venue (the
 	// desktop-session variables). Merged over the entity's env.
-	Env map[string]string `json:"env,omitempty"`
+	Env map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
 
 	// allow_control — REQUIRED to be true for every MUTATING method (input,
 	// app control, config writes). Read-only methods ignore it. This is the
 	// bed-safety gate: a live desktop is not a throwaway, and an unattended plan
 	// must not type into it by accident.
-	AllowControl bool `json:"allow_control,omitempty"`
+	AllowControl bool `yaml:"allow_control,omitempty" json:"allow_control,omitempty"`
 
 	// --- input (keyboard/pointer) ----------------------------------------
 	// text — the text `type` inserts.
-	Text string `json:"text,omitempty"`
+	Text string `yaml:"text,omitempty" json:"text,omitempty"`
 
 	// key — the named key `press-key` presses (return, escape, tab, f5, …).
-	KeyName string `json:"key,omitempty"`
+	KeyName string `yaml:"key,omitempty" json:"key,omitempty"`
 
 	// keys — the chord `hotkey` presses, e.g. ["ctrl","c"].
-	Keys []string `json:"keys,omitempty"`
+	Keys []string `yaml:"keys,omitempty" json:"keys,omitempty"`
 
 	// x / y — desktop-absolute pixel coordinates for click/move/scroll/drag.
-	X int `json:"x,omitempty"`
+	X int `yaml:"x,omitempty" json:"x,omitempty"`
 
-	Y int `json:"y,omitempty"`
+	Y int `yaml:"y,omitempty" json:"y,omitempty"`
 
 	// from_x / from_y — drag start coordinates.
-	FromX int `json:"from_x,omitempty"`
+	FromX int `yaml:"from_x,omitempty" json:"from_x,omitempty"`
 
-	FromY int `json:"from_y,omitempty"`
+	FromY int `yaml:"from_y,omitempty" json:"from_y,omitempty"`
 
 	// button — pointer button (left/right/middle; default left).
-	Button string `json:"button,omitempty"`
+	Button string `yaml:"button,omitempty" json:"button,omitempty"`
 
 	// direction / amount — scroll direction (up/down/left/right) and notches.
-	Direction string `json:"direction,omitempty"`
+	Direction string `yaml:"direction,omitempty" json:"direction,omitempty"`
 
-	Amount int `json:"amount,omitempty"`
+	Amount int `yaml:"amount,omitempty" json:"amount,omitempty"`
 
 	// pid / window_id — target a specific window for element/typed actions.
-	PID int `json:"pid,omitempty"`
+	PID int `yaml:"pid,omitempty" json:"pid,omitempty"`
 
-	WindowID int `json:"window_id,omitempty"`
+	WindowID int `yaml:"window_id,omitempty" json:"window_id,omitempty"`
 
 	// element_index — the AX element index from a prior get-window-state.
-	ElementIndex int `json:"element_index,omitempty"`
+	ElementIndex int `yaml:"element_index,omitempty" json:"element_index,omitempty"`
 
 	// delivery — the Cua delivery mode for an input action: background (default)
 	// or foreground. Foreground briefly fronts the window; it is the documented
 	// escalation when a background action is refused or unverifiable.
-	Delivery string `json:"delivery,omitempty"`
+	Delivery string `yaml:"delivery,omitempty" json:"delivery,omitempty"`
 
 	// --- app / window -----------------------------------------------------
 	// app — the app name/bundle/launch-path for launch-app.
-	App string `json:"app,omitempty"`
+	App string `yaml:"app,omitempty" json:"app,omitempty"`
 
 	// window_id / value — the window a set-window-frame targets, and its value.
-	Value string `json:"value,omitempty"`
+	Value string `yaml:"value,omitempty" json:"value,omitempty"`
 
 	// width / height — rectangle size for set-window-frame.
-	Width int `json:"width,omitempty"`
+	Width int `yaml:"width,omitempty" json:"width,omitempty"`
 
-	Height int `json:"height,omitempty"`
+	Height int `yaml:"height,omitempty" json:"height,omitempty"`
 
 	// --- raw escape hatch -------------------------------------------------
 	// tool — the Cua Driver tool `call` invokes (any tool the plugin has not typed
 	// yet). Mutating by nature, so `call` requires allow_control.
-	Tool string `json:"tool,omitempty"`
+	Tool string `yaml:"tool,omitempty" json:"tool,omitempty"`
 
 	// args — the JSON object of arguments for `call`.
-	Args string `json:"args,omitempty"`
+	Args string `yaml:"args,omitempty" json:"args,omitempty"`
 
 	// --- artifact ---------------------------------------------------------
 	// artifact — the host path `screenshot` writes the PNG to.
-	Artifact string `json:"artifact,omitempty"`
+	Artifact string `yaml:"artifact,omitempty" json:"artifact,omitempty"`
 
 	// artifact_dir — the runner-injected generic evidence-artifact dir.
-	ArtifactDir string `json:"artifact_dir,omitempty"`
+	ArtifactDir string `yaml:"artifact_dir,omitempty" json:"artifact_dir,omitempty"`
 
 	// artifact_min_bytes / artifact_min_dimensions / artifact_not_uniform /
 	// artifact_contains_text — the post-run artifact-reality assertions
 	// (sdk.RunArtifactValidators) this verb can produce. artifact_contains_text is
 	// the OCR wait-for-screen primitive in `screenshot` form (tesseract on the HOST).
-	ArtifactMinBytes int `json:"artifact_min_bytes,omitempty"`
+	ArtifactMinBytes int `yaml:"artifact_min_bytes,omitempty" json:"artifact_min_bytes,omitempty"`
 
-	ArtifactMinDimensions string `json:"artifact_min_dimensions,omitempty"`
+	ArtifactMinDimensions string `yaml:"artifact_min_dimensions,omitempty" json:"artifact_min_dimensions,omitempty"`
 
-	ArtifactNotUniform bool `json:"artifact_not_uniform,omitempty"`
+	ArtifactNotUniform bool `yaml:"artifact_not_uniform,omitempty" json:"artifact_not_uniform,omitempty"`
 
-	ArtifactContainsText string `json:"artifact_contains_text,omitempty"`
+	ArtifactContainsText string `yaml:"artifact_contains_text,omitempty" json:"artifact_contains_text,omitempty"`
 }
 
 // #CuaMethod — the method catalog, grouped by intent so the read-only surface is
@@ -147,25 +147,25 @@ type CuaMethod string
 // bed states them once.
 type CuaDeviceInput struct {
 	// description — human label for the deployment/device.
-	Description string `json:"description,omitempty"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 
 	// driver — the `cua-driver` binary path inside the venue.
-	Driver string `json:"driver,omitempty"`
+	Driver string `yaml:"driver,omitempty" json:"driver,omitempty"`
 
 	// host — the deployment/venue address (omit for "the deploy I run against").
-	Host string `json:"host,omitempty"`
+	Host string `yaml:"host,omitempty" json:"host,omitempty"`
 
 	// permission_mode — Cua Driver's own authorization mode. `standard` is the
 	// promptless default; `bounded` admits only a reviewed manifest; `unrestricted`
 	// requires an explicit danger acknowledgement. The plugin passes the mode to the
 	// driver's launch, never overrides a running daemon's policy.
-	PermissionMode string `json:"permission_mode,omitempty"`
+	PermissionMode string `yaml:"permission_mode,omitempty" json:"permission_mode,omitempty"`
 
 	// capability_manifest — the reviewed manifest path for `bounded` mode.
-	CapabilityManifest string `json:"capability_manifest,omitempty"`
+	CapabilityManifest string `yaml:"capability_manifest,omitempty" json:"capability_manifest,omitempty"`
 
 	// env — extra session environment the driver needs inside the venue (the
 	// desktop-session variables: XDG_RUNTIME_DIR, WAYLAND_DISPLAY,
 	// HYPRLAND_INSTANCE_SIGNATURE, DBUS_SESSION_BUS_ADDRESS, YDOTOOL_SOCKET).
-	Env map[string]string `json:"env,omitempty"`
+	Env map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
 }
